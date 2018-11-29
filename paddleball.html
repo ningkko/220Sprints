@@ -1,0 +1,147 @@
+<!--Objective: implement event listeners to move the paddle left and right, and detect when the ball hits a brick -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <style type="text/css">
+    body{
+        text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <canvas id="canvas" height="600px" width="800px"> </canvas>
+
+    <script>
+      var canvas = document.getElementById("canvas"),
+          context = canvas.getContext("2d"),
+          x = canvas.width / 2,
+          y = canvas.height - 30,
+          dx = 3,
+          dy = -3,
+          paddleH = 15,
+          paddleW = 80,
+          paddleX = (canvas.width - paddleW) / 2,
+          brickRows = 2,
+          brickCol = 9,
+          brickW = 75,
+          brickH = 20,
+          brickPadding = 10,
+          brickOffsetTop = 30,
+          brickOffsetLeft = 30;
+          rightKey = false,
+          leftKey = false;
+      var bricks = [];
+      for (c = 0; c < brickCol; c++) {
+        for (r = 0; r < brickRows; r++) {
+          bricks.push({
+            x: (c * (brickW + brickPadding)) + brickOffsetLeft,
+            y: (r * (brickH + brickPadding)) + brickOffsetTop,
+            status: 1
+          });
+        }
+      }
+
+
+       // function to draw the ball 
+      function drawBall() {
+        context.beginPath();
+        context.arc(x, y, 10, 0, Math.PI * 2);
+        context.fillStyle = "pink";
+        context.fill();
+        context.closePath();
+      }
+
+       // function draw the paddle
+      function drawPaddle() {
+        context.beginPath();
+        context.rect(paddleX, canvas.height - paddleH, paddleW, paddleH);
+        context.fillStyle = "gray";
+        context.fill();
+        context.closePath();
+      }
+
+       // function draw the bricks
+      function drawBricks() {
+        bricks.forEach(function(brick) {
+          if (!brick.status) return;
+          context.beginPath();
+          context.rect(brick.x, brick.y, brickW, brickH);
+          context.fillStyle = "lightgray";
+          context.fill();
+          context.closePath();
+        });
+      }
+
+      function collisionDetection() {
+        bricks.forEach(function(b) {
+          if (!b.status) return;
+
+          var inBricksColumn = x > b.x && x < b.x + brickW,
+              inBricksRow = y > b.y && y < b.y + brickH;
+
+          if (inBricksColumn && inBricksRow) {
+            dy = -dy;
+            b.status = 0;
+          }
+        });
+      }
+
+      function draw() {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        drawBricks();
+        drawBall();
+        drawPaddle();
+        collisionDetection();
+
+        if (hitSideWall())
+            dx = -dx;
+        if (hitTop() || hitPaddle())
+            dy = -dy;
+        if (gameOver())
+          document.location.reload();
+
+
+        function hitPaddle() { return hitBottom() && ballOverPaddle() }
+        function ballOverPaddle() { return x > paddleX && x < paddleX + paddleW }
+        function hitBottom() { return y + dy > canvas.height - 15 }
+        function gameOver() { return hitBottom() && !ballOverPaddle() }
+        function hitSideWall() { return x + dx > canvas.width - 15 || x + dx < 15 }
+        function hitTop() { return y + dy < 15 }
+        function xOutOfBounds() { return x + dx > canvas.width - 15 || x + dx < 15 }
+        function rightPressed(e) { return e.keyCode == 39 }
+        function leftPressed(e) { return e.keyCode == 37 }
+
+        function keyDown(e) {
+          rightKey = rightPressed(e); 
+          leftKey = leftPressed(e);
+        }
+
+        function keyUp(e) {
+          rightKey = rightPressed(e) ? false : rightKey;
+          leftKey = leftPressed(e) ? false : leftKey;
+        }
+
+        // Add an event listener to the keypress event.
+        document.addEventListener("keydown", keyDown, false);
+        document.addEventListener("keyup", keyUp, false);
+
+        // move the paddle right if the right key pressed
+        var maxX = canvas.width - paddleW,
+            minX = 0,
+            paddleDelta = rightKey ? 7 : leftKey ? -7 : 0;
+
+        paddleX = paddleX + paddleDelta;
+        paddleX = Math.min(paddleX, maxX);
+        paddleX = Math.max(paddleX, minX);
+
+        x += dx;
+        y += dy;
+      }
+
+      setInterval(draw, 10);
+    </script>
+</body>
+</html>
